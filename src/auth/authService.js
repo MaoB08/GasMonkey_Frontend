@@ -27,12 +27,6 @@ export async function login({ username, password }) {
     }
 
     const data = await response.json();
-    
-    if (data.token && data.user) {
-      localStorage.setItem('accessToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
-    
     return data;
   } catch (error) {
     Swal.fire({
@@ -45,6 +39,69 @@ export async function login({ username, password }) {
       timerProgressBar: true,
     });
 
+    return null;
+  }
+}
+
+export async function verify2FA({ code, tempToken }) {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/verify-2fa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, tempToken }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al verificar código');
+    }
+
+    const data = await response.json();
+    
+    if (data.token && data.user) {
+      localStorage.setItem('accessToken', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    }
+    
+    return data;
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Código inválido',
+      text: error.message,
+    });
+    return null;
+  }
+}
+
+export async function resendCode({ tempToken }) {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/resend-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tempToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al reenviar código');
+    }
+
+    const data = await response.json();
+    
+    Swal.fire({
+      icon: 'success',
+      title: 'Código reenviado',
+      text: `Se envió un nuevo código a ${data.email}`,
+      timer: 2000
+    });
+    
+    return data;
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo reenviar el código',
+    });
     return null;
   }
 }

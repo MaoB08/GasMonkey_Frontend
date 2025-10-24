@@ -30,12 +30,18 @@ export function useAuth() {
       
       if (!data) return null;
       
-      localStorage.setItem('accessToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user)); 
+      // Si requiere 2FA, pasar data al callback
+      if (data.requires2FA) {
+        if (onLoginCallback) onLoginCallback(data);
+        return data;
+      }
       
+      // Si NO requiere 2FA (login directo)
+      localStorage.setItem('accessToken', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
       
-      if (onLoginCallback) onLoginCallback(data.token, 'user');
+      if (onLoginCallback) onLoginCallback(data);
       return data;
     } catch (err) {
       setError(err.message);

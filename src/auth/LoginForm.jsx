@@ -3,29 +3,67 @@ import { useAuth } from './useAuth';
 import { Link, useNavigate } from "react-router-dom";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 import Swal from 'sweetalert2';
+import { TwoFactorVerification } from './TwoFactorVerification';
 
 export function LoginForm({ onLogin }) {
     const { handleLogin, loading, error } = useAuth();
-    const [username, setusername] = useState('');
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-     const navigate = useNavigate();
+    const [show2FA, setShow2FA] = useState(false);
+    const [tempToken, setTempToken] = useState('');
+    const [email, setEmail] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const result = await handleLogin({ username, password }, onLogin);
-        if(result){
-        Swal.fire({
-        icon: 'success',
-        title: '¡Bienvenido!',
-        text: 'Inicio de sesión exitoso.',
-        timer: 1500,
-        showConfirmButton: false,
-      }).then(() => {
-        navigate('/Home');
-      });
+        
+        const result = await handleLogin({ username, password }, (data) => {
+            // Si requiere 2FA
+            if (data.requires2FA) {
+                setTempToken(data.tempToken);
+                setEmail(data.email);
+                setShow2FA(true);
+            } else {
+                // Login directo sin 2FA (si lo desactivas para algunos usuarios)
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Bienvenido!',
+                    text: 'Inicio de sesión exitoso.',
+                    timer: 1500,
+                    showConfirmButton: false,
+                }).then(() => {
+                    navigate('/Home');
+                });
+            }
+        });
     };
+
+    const handle2FASuccess = (data) => {
+        navigate('/Home');
+    };
+
+    const handleBackToLogin = () => {
+        setShow2FA(false);
+        setTempToken('');
+        setEmail('');
+        setUsername('');
+        setPassword('');
+    };
+
+    // Si está en modo 2FA, mostrar componente de verificación
+    if (show2FA) {
+        return (
+            <TwoFactorVerification
+                tempToken={tempToken}
+                email={email}
+                onSuccess={handle2FASuccess}
+                onBack={handleBackToLogin}
+            />
+        );
     }
+
+    // Login normal
     return (
         <div className='min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-100 to-[#4D6C98]'>
             <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md ">
@@ -48,13 +86,11 @@ export function LoginForm({ onLogin }) {
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    {/* Icono de usuario */}
                                     <svg
                                         className="h-5 w-5 text-gray-400"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
-                                        xmlns="http://www.w3.org/2000/svg"
                                     >
                                         <path
                                             strokeLinecap="round"
@@ -69,7 +105,7 @@ export function LoginForm({ onLogin }) {
                                     name="userName"
                                     type="text"
                                     value={username}
-                                    onChange={(e) => setusername(e.target.value)}
+                                    onChange={(e) => setUsername(e.target.value)}
                                     placeholder="Ingresa tu usuario"
                                     required
                                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -87,13 +123,11 @@ export function LoginForm({ onLogin }) {
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    {/* Icono de candado */}
                                     <svg
                                         className="h-5 w-5 text-gray-400"
                                         fill="none"
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
-                                        xmlns="http://www.w3.org/2000/svg"
                                     >
                                         <path
                                             strokeLinecap="round"
@@ -118,13 +152,14 @@ export function LoginForm({ onLogin }) {
                                     onClick={() => setShowPassword((prev) => !prev)}
                                 >
                                     {showPassword ? (
-                                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                                        <EyeSlashIcon className="h-5 w-5 text-gray-400" />
                                     ) : (
-                                    <EyeIcon className="h-5 w-5 text-gray-400" />
+                                        <EyeIcon className="h-5 w-5 text-gray-400" />
                                     )}
                                 </div>
                             </div>
                         </div>
+
                         {/* Botón Entrar */}
                         <div>
                             <button
@@ -135,11 +170,12 @@ export function LoginForm({ onLogin }) {
                                 {loading ? 'Entrando...' : 'Entrar'}
                             </button>
                         </div>
+
                         <Link 
                             to="/forgot-password" 
                             className="text-sm text-blue-600 hover:text-blue-500 font-medium flex justify-end"
                         >
-                        ¿Olvidaste tu contraseña?
+                            ¿Olvidaste tu contraseña?
                         </Link>
                     </div>
                 </form>
