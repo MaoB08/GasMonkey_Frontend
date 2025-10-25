@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { LoginForm } from "./auth/LoginForm";
 import Home from "./home/Home";
-import ForgotPassword from "./forgot-password/ForgotPassword";
+import { ForgotPassword } from "./forgot-password/ForgotPassword";
 import Dashboard from "./dashboard/Dashboard";
 
 import Productos from "./dashboard/modules/productos/Productos";
