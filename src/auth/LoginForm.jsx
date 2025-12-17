@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 import Swal from 'sweetalert2';
 import { TwoFactorVerification } from './TwoFactorVerification';
+import Logo from '../assets/imagenes/logo.png';
 
 export function LoginForm({ onLogin }) {
     const { handleLogin, loading, error } = useAuth();
@@ -17,7 +18,7 @@ export function LoginForm({ onLogin }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         const result = await handleLogin({ username, password }, (data) => {
             // Si requiere 2FA
             if (data.requires2FA) {
@@ -25,22 +26,23 @@ export function LoginForm({ onLogin }) {
                 setEmail(data.email);
                 setShow2FA(true);
             } else {
-                // Login directo sin 2FA (si lo desactivas para algunos usuarios)
+                // Login directo sin 2FA - useAuth ya maneja el context login
                 Swal.fire({
                     icon: 'success',
                     title: '¡Bienvenido!',
                     text: 'Inicio de sesión exitoso.',
                     timer: 1500,
                     showConfirmButton: false,
-                }).then(() => {
-                    navigate('/Home');
                 });
+
+                // Navigate immediately, not in callback
+                navigate('/home');
             }
         });
     };
 
     const handle2FASuccess = (data) => {
-        navigate('/Home');
+        navigate('/home');
     };
 
     const handleBackToLogin = () => {
@@ -68,7 +70,10 @@ export function LoginForm({ onLogin }) {
         <div className='min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-100 to-[#4D6C98]'>
             <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md ">
                 <div className="text-center mb-8">
-                    <h1 className="text-2xl font-bold text-gray-800">¡Bienvenido!</h1>
+                    <div className='text-center mb-8 relative'>
+                        <img src={Logo} alt="Logo" className='w-34 h-34 absolute left-0 top-1/2 transform -translate-y-1/2' />
+                        <h1 className="text-2xl font-bold text-gray-800">¡Bienvenido!</h1>
+                    </div>
                     <p className="text-gray-600 mt-2">Gestor de Inventario</p>
                 </div>
 
@@ -171,8 +176,8 @@ export function LoginForm({ onLogin }) {
                             </button>
                         </div>
 
-                        <Link 
-                            to="/forgot-password" 
+                        <Link
+                            to="/forgot-password"
                             className="text-sm text-blue-600 hover:text-blue-500 font-medium flex justify-end"
                         >
                             ¿Olvidaste tu contraseña?

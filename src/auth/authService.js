@@ -15,7 +15,7 @@ export async function login({ username, password }) {
       try {
         const error = await response.json();
         errorMessage = error.error || error.message || errorMessage;
-      } catch (e) {}
+      } catch (e) { }
 
       Swal.fire({
         icon: 'error',
@@ -57,12 +57,10 @@ export async function verify2FA({ code, tempToken }) {
     }
 
     const data = await response.json();
-    
-    if (data.token && data.user) {
-      localStorage.setItem('accessToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
-    
+
+    // Don't store in localStorage here - let AuthContext handle it
+    // This prevents duplicate storage and ensures consistent state management
+
     return data;
   } catch (error) {
     Swal.fire({
@@ -87,14 +85,14 @@ export async function resendCode({ tempToken }) {
     }
 
     const data = await response.json();
-    
+
     Swal.fire({
       icon: 'success',
       title: 'Código reenviado',
       text: `Se envió un nuevo código a ${data.email}`,
       timer: 2000
     });
-    
+
     return data;
   } catch (error) {
     Swal.fire({

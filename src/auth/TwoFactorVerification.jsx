@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { verify2FA, resendCode } from './authService';
+import { useAuthContext } from './AuthContext';
 import Swal from 'sweetalert2';
 
 export function TwoFactorVerification({ tempToken, email, onSuccess, onBack }) {
+  const { login: contextLogin } = useAuthContext();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(300); // 5 minutos en segundos
@@ -56,7 +58,7 @@ export function TwoFactorVerification({ tempToken, email, onSuccess, onBack }) {
     if (e.key === 'Backspace' && !code[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
-    
+
     // Verificar al presionar Enter
     if (e.key === 'Enter' && code.join('').length === 6) {
       handleVerify();
@@ -67,7 +69,7 @@ export function TwoFactorVerification({ tempToken, email, onSuccess, onBack }) {
   const handlePaste = (e) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').trim().slice(0, 6);
-    
+
     // Verificar que solo sean números
     if (!/^\d+$/.test(pastedData)) {
       Swal.fire({
@@ -100,7 +102,7 @@ export function TwoFactorVerification({ tempToken, email, onSuccess, onBack }) {
   // Verificar código
   const handleVerify = async () => {
     const fullCode = code.join('');
-    
+
     if (fullCode.length !== 6) {
       Swal.fire({
         icon: 'warning',
@@ -115,17 +117,21 @@ export function TwoFactorVerification({ tempToken, email, onSuccess, onBack }) {
 
     try {
       const data = await verify2FA({ code: fullCode, tempToken });
-      
+
       if (data) {
+        // Use context login to update global state
+        contextLogin(data.token, data.user);
+
         Swal.fire({
           icon: 'success',
           title: '¡Verificación exitosa!',
           text: `Bienvenido ${data.user.firstName}`,
           timer: 1500,
           showConfirmButton: false,
-        }).then(() => {
-          onSuccess(data);
         });
+
+        // Navigate immediately, not in callback
+        onSuccess(data);
       } else {
         // Error en la verificación
         setCode(['', '', '', '', '', '']);
@@ -143,10 +149,10 @@ export function TwoFactorVerification({ tempToken, email, onSuccess, onBack }) {
   // Reenviar código
   const handleResend = async () => {
     setLoading(true);
-    
+
     try {
       const result = await resendCode({ tempToken });
-      
+
       if (result) {
         setCountdown(300);
         setCanResend(false);
